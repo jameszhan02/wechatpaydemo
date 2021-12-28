@@ -6,7 +6,7 @@
  * @flow strict-local
  */
 
-import React, { useEffect } from 'react';
+import React, {useEffect} from 'react';
 import type {Node} from 'react';
 
 import jwtAxios from './axios';
@@ -21,7 +21,7 @@ import {
   Text,
   useColorScheme,
   View,
-  Button
+  Button,
 } from 'react-native';
 
 import {
@@ -31,9 +31,6 @@ import {
   LearnMoreLinks,
   ReloadInstructions,
 } from 'react-native/Libraries/NewAppScreen';
-
-
-
 
 const Section = ({children, title}): Node => {
   const isDarkMode = useColorScheme() === 'dark';
@@ -69,52 +66,59 @@ const App: () => Node = () => {
   };
 
   useEffect(() => {
-    WeChat.registerApp('wx8079a3ed40a3f69f', 'universalLink');
+    WeChat.registerApp('wx8079a3ed40a3f69f', 'https://www.peacefulmall.com/').catch(error => {
+      console.log('wechat init ERROR: ', error);
+    });
+    console.log("app install:", WeChat.isWXAppInstalled());
+    // onPressPay();
 
-    // console.log("check: ", WeChat.pay({
-
-    // }));
   }, []);
-  onPressPay = ()=>{
-    jwtAxios.post('api/res/pay/payordersnap', {
-      orderid: 21,
-      ismobile:true,
-      iswechatbrowser:false,
-      isapp:true,
-      paymentmethod:{
-        id: 3,
-        title: 'Wechat'
-      }
-    }).then(res =>{
-      // console.log('pay', res.data.data);
-      let wechatReturn = res.data.data;
-      let payload = {
-        appId: wechatReturn.appid,
-        partnerId: wechatReturn.partnerid,
-        prepayId:  wechatReturn.prepayid,
-        nonceStr: wechatReturn.noncestr,
-        timeStamp: wechatReturn.timestamp,
-        package: wechatReturn.package,
-        sign: wechatReturn.sign,
-      }
-      WeChat.pay(payload).then(res =>{
-        console.log("支付成功", res);
+  onPressPay = () => {
+    jwtAxios
+      .post('api/res/pay/payordersnap', {
+        orderid: 21,
+        ismobile: true,
+        iswechatbrowser: false,
+        isapp: true,
+        paymentmethod: {
+          id: 3,
+          title: 'Wechat',
+        },
       })
-      .catch(err =>{
-        console.log('支付失敗', err );
+      .then(res => {
+        console.log('pay', res.data.data);
+        let wechatReturn = res.data.data;
+        let payload = {
+          partnerId: wechatReturn.partnerid,
+          prepayId: wechatReturn.prepayid,
+          nonceStr: String(wechatReturn.noncestr),
+          // in ios timestamp need to be a number, in android is string.
+          timeStamp: wechatReturn.timestamp - 0,
+          package: wechatReturn.package,
+          sign: wechatReturn.sign,
+        };
+        WeChat.pay(payload)
+          .then(res => {
+            console.log('支付成功', res);
+            alert(res);
+          })
+          .catch(err => {
+            console.log('支付失敗', err);
+            alert(err);
+          });
       })
-    }).catch(err =>{
-      console.log('Error: ', err);
-    })
-  }
+      .catch(err => {
+        console.log('Error: ', err);
+      });
+  };
   return (
     <SafeAreaView style={backgroundStyle}>
-     <Button
-  onPress={onPressPay}
-  title="Pay"
-  color="#841584"
-  accessibilityLabel="Learn more about this purple button"
-/>
+      <Button
+        onPress={() => onPressPay()}
+        title="Pay"
+        color="#841584"
+        accessibilityLabel="Learn more about this purple button"
+      />
     </SafeAreaView>
   );
 };
